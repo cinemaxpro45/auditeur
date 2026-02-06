@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>L'Auditeur - Répétition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
+            animation: gradient-shift 15s ease infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Preload Modal */
+        .preload-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        .preload-modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .preload-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 50px 40px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .preload-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .preload-content h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .preload-content p {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 35px;
+            line-height: 1.7;
+        }
+
+        .preload-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+        }
+
+        .preload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.7);
+        }
+
+        .preload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preload-progress {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+
+        .preload-progress.active {
+            display: block;
+        }
+
+        .preload-progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .preload-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.3s;
+            width: 0%;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .preload-progress-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+        }
+
+        .preload-success {
+            display: none;
+            color: #4ade80;
+            font-size: 16px;
+            margin-top: 15px;
+            font-weight: 700;
+        }
+
+        .preload-success.active {
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo-text h1 {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text p {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 2px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Main Content */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .dialogue-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 40px 30px;
+            margin: auto;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dialogue-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .character-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .character-badge.claire {
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            color: white;
+        }
+
+        .character-badge.directeur {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .character-badge.auditeur {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        .character-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dialogue-text {
+            font-size: 24px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 400;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+            min-height: 100px;
+        }
+
+        .dialogue-text.auditeur-turn {
+            font-style: italic;
+            color: rgba(200, 180, 255, 0.95);
+            border-left: 4px solid rgba(139, 92, 246, 0.6);
+            padding-left: 25px;
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-count {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 700;
+        }
+
+        .progress-bar-bg {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            width: 0%;
+        }
+
+        /* Action Button */
+        .action-button-container {
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .action-button {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 24px 40px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 20px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .action-button:hover::before {
+            left: 100%;
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+        }
+
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-button.finished {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .button-icon {
+            font-size: 28px;
+        }
+
+        .button-text {
+            font-size: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .loading {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .restart-button {
+            margin-top: 20px;
+            padding: 14px 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .restart-button.visible {
+            display: block;
+        }
+
+        .restart-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px;
+            }
+
+            .logo-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 22px;
+            }
+
+            .logo-text h1 {
+                font-size: 18px;
+            }
+
+            .dialogue-card {
+                padding: 30px 24px;
+            }
+
+            .dialogue-text {
+                font-size: 20px;
+            }
+
+            .action-button {
+                padding: 20px 32px;
+            }
+
+            .button-text {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Preload Modal -->
+    <div class="preload-modal" id="preloadModal">
+        <div class="preload-content">
+            <div class="preload-icon">🎧</div>
+            <h2>Prêt à répéter ?</h2>
+            <p>Chargez les 20 fichiers audio pour une expérience fluide et sans interruption.</p>
+            <button class="preload-btn" id="preloadBtn">Charger les audios</button>
+            <div class="preload-progress" id="preloadProgress">
+                <div class="preload-progress-bar">
+                    <div class="preload-progress-fill" id="preloadProgressFill"></div>
+                </div>
+                <div class="preload-progress-text" id="preloadProgressText">0 / 20 fichiers</div>
+            </div>
+            <div class="preload-success" id="preloadSuccess">✓ Tous les audios sont chargés !</div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🎭</div>
+            <div class="logo-text">
+                <h1>L'Auditeur</h1>
+                <p>Répétition</p>
+            </div>
+        </div>
+        <div class="mode-toggle">
+            <button class="mode-btn" data-mode="manuel">Manuel</button>
+            <button class="mode-btn active" data-mode="auto">Auto</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <div class="dialogue-card">
+            <div class="character-badge claire">
+                <span class="character-dot"></span>
+                <span id="characterName">CLAIRE</span>
+            </div>
+
+            <div class="dialogue-text" id="dialogueText">
+                Entrez.
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span class="progress-label">Progression</span>
+                    <span class="progress-count" id="progressCount">1 / 35</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Button -->
+    <div class="action-button-container">
+        <button class="action-button" id="actionButton">
+            <span class="button-icon">▶</span>
+            <span class="button-text">Commencer</span>
+            <div class="loading" id="loading"></div>
+        </button>
+        <button class="restart-button" id="restartButton">↻ Recommencer</button>
+    </div>
+
+    <script>
+        // DONNÉES DU SCÉNARIO - 35 RÉPLIQUES EXACTES
+        const SCRIPT_DATA = [
+            { character: 'CLAIRE', text: 'Entrez.', audioFile: '1.mp3' },
+            { character: 'AUDITEUR', text: 'Bonsoir. Navré pour l\'heure. Le service sécurité m\'envoie pour la mise à jour des protocoles.', audioFile: null },
+            { character: 'CLAIRE', text: 'Je n\'ai pas reçu de mémo. Repassez demain.', audioFile: '2.mp3' },
+            { character: 'AUDITEUR', text: 'C\'est la nouvelle directive RGPD. Juste une double authentification sur votre poste. Ça prend deux minutes.', audioFile: null },
+            { character: 'CLAIRE', text: 'Allez-y. Faites vite. J\'ai un bilan à finir pour demain matin.', audioFile: '3.mp3' },
+            { character: 'AUDITEUR', text: 'Bien sûr.', audioFile: null },
+            { character: 'AUDITEUR', text: 'Vous utilisez toujours le VPN par défaut ?', audioFile: null },
+            { character: 'CLAIRE', text: 'Oui, oui.', audioFile: '4.mp3' },
+            { character: 'AUDITEUR', text: 'Parfait. Je synchronise.', audioFile: null },
+            { character: 'CLAIRE', text: 'Il y a un problème ?', audioFile: '5.mp3' },
+            { character: 'AUDITEUR', text: 'Vous avez changé le code de l\'alarme de votre maison hier soir, Claire.', audioFile: null },
+            { character: 'CLAIRE', text: 'Pardon ?', audioFile: '6.mp3' },
+            { character: 'AUDITEUR', text: '14. 07. 89.', audioFile: null },
+            { character: 'AUDITEUR', text: 'La date de naissance de Léo. C\'est touchant. Mais c\'est un mot de passe faible.', audioFile: null },
+            { character: 'CLAIRE', text: 'Qui êtes-vous ? Comment connaissez-vous le nom de mon fils ?', audioFile: '7.mp3' },
+            { character: 'AUDITEUR', text: 'J\'ai accès à tout. Vos mails pros. Vos comptes personnels. La webcam de votre salon...', audioFile: null },
+            { character: 'AUDITEUR', text: 'Votre mari regarde la télévision en ce moment. Il porte ce vieux t-shirt gris. Celui avec le trou au col.', audioFile: null },
+            { character: 'AUDITEUR', text: 'Pas de police. Pas de sécurité.', audioFile: null },
+            { character: 'CLAIRE', text: 'Je n\'ai pas d\'argent liquide ici. Prenez mon ordinateur, prenez ce que vous voulez mais partez.', audioFile: '8.mp3' },
+            { character: 'AUDITEUR', text: 'Je me fous de votre argent. Je veux l\'accès Root au serveur central. Maintenant.', audioFile: null },
+            { character: 'CLAIRE', text: 'Je... je ne peux pas. C\'est impossible. Je serai licenciée, je serai poursuivie...', audioFile: '9.mp3' },
+            { character: 'AUDITEUR', text: 'Si vous ne me donnez pas ce code, je détruis tout. Pas la boîte. Vous.', audioFile: null },
+            { character: 'AUDITEUR', text: 'Je publie l\'historique de vos conversations privées. J\'efface vos comptes d\'épargne. Et Léo... on sait où il va à l\'école.', audioFile: null },
+            { character: 'CLAIRE', text: 'Vous êtes malade ! Laissez-moi sortir !', audioFile: '10.mp3' },
+            { character: 'AUDITEUR', text: 'Dix secondes, Claire.', audioFile: null },
+            { character: 'CLAIRE', text: 'Non ! S\'il vous plaît !', audioFile: '11.mp3' },
+            { character: 'AUDITEUR', text: 'Dix. Neuf. Huit...', audioFile: null },
+            { character: 'CLAIRE', text: 'Arrêtez !', audioFile: '12.mp3' },
+            { character: 'AUDITEUR', text: '... Sept. Six. Cinq...', audioFile: null },
+            { character: 'AUDITEUR', text: 'QUATRE ! TROIS ! DEUX !', audioFile: null },
+            { character: 'CLAIRE', text: 'ALPHA ! TANGO ! 59 ! DIÈSE ! C\'EST BON ?! ALPHA TANGO 59 DIÈSE !', audioFile: '13.mp3' },
+            { character: 'AUDITEUR', text: 'Code validé. Accès serveur confirmé. Temps de résistance : 8 minutes et 30 secondes.', audioFile: null },
+            { character: 'CLAIRE', text: 'Quoi... ?', audioFile: '14.mp3' },
+            { character: 'DIRECTEUR', text: 'Alors ?', audioFile: '15.mp3' },
+            { character: 'AUDITEUR', text: 'Ingénierie sociale standard. Menace sur la sphère privée. Levier émotionnel "famille". Taux de réussite 100%.', audioFile: null },
+            { character: 'DIRECTEUR', text: 'Claire... On vous confie les clés de la maison mère. Des données confidentielles défense.', audioFile: '16.mp3' },
+            { character: 'CLAIRE', text: 'Monsieur le Directeur... il... il savait pour Léo... il...', audioFile: '17.mp3' },
+            { character: 'DIRECTEUR', text: 'Et alors ? Vous avez mis l\'entreprise en danger mortel parce que vous avez eu peur ? Huit minutes trente, Claire. C\'est tout ce qu\'il a fallu pour vous briser.', audioFile: '18.mp3' },
+            { character: 'DIRECTEUR', text: 'Beau boulot. On débriefe ça demain ?', audioFile: '19.mp3' },
+            { character: 'AUDITEUR', text: 'Avec plaisir. Je vous envoie le rapport complet ce soir.', audioFile: null },
+            { character: 'DIRECTEUR', text: 'Allez, je vous offre un verre en bas.', audioFile: '20.mp3' },
+            { character: 'AUDITEUR', text: 'Vous saviez qu\'elle utilisait sa date de naissance pour...', audioFile: null }
+        ];
+
+        // Éléments DOM
+        const preloadModal = document.getElementById('preloadModal');
+        const preloadBtn = document.getElementById('preloadBtn');
+        const preloadProgress = document.getElementById('preloadProgress');
+        const preloadProgressFill = document.getElementById('preloadProgressFill');
+        const preloadProgressText = document.getElementById('preloadProgressText');
+        const preloadSuccess = document.getElementById('preloadSuccess');
+        const actionButton = document.getElementById('actionButton');
+        const restartButton = document.getElementById('restartButton');
+        const characterName = document.getElementById('characterName');
+        const dialogueText = document.getElementById('dialogueText');
+        const progressCount = document.getElementById('progressCount');
+        const progressBar = document.getElementById('progressBar');
+        const loading = document.getElementById('loading');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+
+        // Variables d'état
+        let currentIndex = 0;
+        let currentAudio = null;
+        let isPlaying = false;
+        let isPreloaded = false;
+        let currentMode = 'auto'; // 'auto' ou 'manuel'
+        let audioCache = new Map();
+
+        // Déverrouillage audio (iOS/Safari)
+        function unlockAudio() {
+            const silentAudio = new Audio();
+            silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAhIS8KVqFAAAAAAD/+xDEAAPAAAGkAAAAIAAANIAAAARMQU1FMy4xMDCqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqg==';
+            silentAudio.play().then(() => silentAudio.pause()).catch(() => {});
+        }
+
+        // Préchargement des 20 fichiers audio
+        async function preloadAllAudio() {
+            const audioFiles = [];
+            for (let i = 1; i <= 20; i++) {
+                audioFiles.push(`${i}.mp3`);
+            }
+
+            preloadProgress.classList.add('active');
+            preloadBtn.disabled = true;
+            preloadBtn.textContent = 'Chargement...';
+
+            let loaded = 0;
+            const total = audioFiles.length;
+
+            for (const file of audioFiles) {
+                try {
+                    await new Promise((resolve) => {
+                        const audio = new Audio(file);
+                        
+                        const onLoad = () => {
+                            audioCache.set(file, audio);
+                            loaded++;
+                            const progress = (loaded / total) * 100;
+                            preloadProgressFill.style.width = `${progress}%`;
+                            preloadProgressText.textContent = `${loaded} / ${total} fichiers`;
+                            console.log(`✓ Chargé: ${file}`);
+                            resolve();
+                        };
+
+                        const onError = () => {
+                            loaded++;
+                            const progress = (loaded / total) * 100;
+                            preloadProgressFill.style.width = `${progress}%`;
+                            preloadProgressText.textContent = `${loaded} / ${total} fichiers`;
+                            console.warn(`✗ Échec: ${file}`);
+                            resolve();
+                        };
+
+                        audio.addEventListener('canplaythrough', onLoad, { once: true });
+                        audio.addEventListener('error', onError, { once: true });
+                        
+                        audio.preload = 'auto';
+                        audio.src = file;
+                        audio.load();
+                    });
+                } catch (error) {
+                    console.error(`Erreur: ${file}`, error);
+                    loaded++;
+                }
+            }
+
+            isPreloaded = true;
+            preloadSuccess.classList.add('active');
+            preloadBtn.textContent = 'C\'est parti !';
+            preloadBtn.disabled = false;
+
+            setTimeout(() => {
+                preloadModal.classList.add('hidden');
+            }, 1000);
+        }
+
+        // Gestion des modes
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                console.log(`Mode changé: ${currentMode}`);
+            });
+        });
+
+        // Mise à jour de l'interface
+        function updateUI() {
+            const line = SCRIPT_DATA[currentIndex];
+            
+            const badge = document.querySelector('.character-badge');
+            badge.className = `character-badge ${line.character.toLowerCase()}`;
+            characterName.textContent = line.character;
+
+            dialogueText.textContent = line.text;
+            dialogueText.className = line.character === 'AUDITEUR' ? 'dialogue-text auditeur-turn' : 'dialogue-text';
+
+            progressCount.textContent = `${currentIndex + 1} / ${SCRIPT_DATA.length}`;
+
+            const progress = ((currentIndex + 1) / SCRIPT_DATA.length) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            const card = document.querySelector('.dialogue-card');
+            card.style.animation = 'none';
+            setTimeout(() => {
+                card.style.animation = 'fadeIn 0.5s ease';
+            }, 10);
+
+            if (currentIndex === SCRIPT_DATA.length - 1) {
+                actionButton.classList.add('finished');
+                actionButton.querySelector('.button-icon').textContent = '✓';
+                actionButton.querySelector('.button-text').textContent = 'Terminé !';
+                restartButton.classList.add('visible');
+            }
+        }
+
+        // Lecture audio
+        async function playAudio(audioFile) {
+            if (!audioFile) return;
+
+            return new Promise((resolve, reject) => {
+                if (audioCache.has(audioFile)) {
+                    currentAudio = audioCache.get(audioFile).cloneNode();
+                    console.log(`▶ Lecture: ${audioFile}`);
+                } else {
+                    currentAudio = new Audio(audioFile);
+                    console.log(`▶ Chargement: ${audioFile}`);
+                    loading.classList.add('active');
+                }
+                
+                currentAudio.onended = () => {
+                    console.log(`✓ Terminé: ${audioFile}`);
+                    loading.classList.remove('active');
+                    resolve();
+                };
+                
+                currentAudio.onerror = (e) => {
+                    console.error(`✗ Erreur: ${audioFile}`, e);
+                    loading.classList.remove('active');
+                    reject();
+                };
+                
+                currentAudio.play().catch(error => {
+                    console.error(`✗ Play: ${audioFile}`, error);
+                    loading.classList.remove('active');
+                    reject();
+                });
+            });
+        }
+
+        // Phrase suivante
+        async function nextPhrase() {
+            if (isPlaying) return;
+            if (!isPreloaded) {
+                alert('⚠️ Chargez d\'abord les audios !');
+                return;
+            }
+            if (currentIndex >= SCRIPT_DATA.length - 1) return;
+
+            unlockAudio();
+            isPlaying = true;
+            actionButton.disabled = true;
+
+            try {
+                currentIndex++;
+                updateUI();
+
+                const line = SCRIPT_DATA[currentIndex];
+                console.log(`[${currentIndex + 1}] ${line.character}: "${line.text.substring(0, 40)}..."`);
+
+                if (line.audioFile) {
+                    await playAudio(line.audioFile);
+                }
+
+                // MODE AUTO : si c'est Claire/Directeur et que la prochaine est l'Auditeur
+                if (currentMode === 'auto' && 
+                    (line.character === 'CLAIRE' || line.character === 'DIRECTEUR') &&
+                    currentIndex < SCRIPT_DATA.length - 1) {
+                    
+                    const nextLine = SCRIPT_DATA[currentIndex + 1];
+                    if (nextLine.character === 'AUDITEUR') {
+                        console.log('🤖 Auto: passage à l\'Auditeur');
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        actionButton.disabled = false;
+                        isPlaying = false;
+                        await nextPhrase();
+                        return;
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erreur:', error);
+            } finally {
+                actionButton.disabled = false;
+                isPlaying = false;
+            }
+        }
+
+        // Recommencer
+        function restart() {
+            currentIndex = 0;
+            updateUI();
+            actionButton.classList.remove('finished');
+            actionButton.querySelector('.button-icon').textContent = '▶';
+            actionButton.querySelector('.button-text').textContent = 'Commencer';
+            restartButton.classList.remove('visible');
+        }
+
+        // Événements
+        preloadBtn.addEventListener('click', async () => {
+            if (!isPreloaded) {
+                unlockAudio();
+                await preloadAllAudio();
+            } else {
+                preloadModal.classList.add('hidden');
+            }
+        });
+
+        actionButton.addEventListener('click', nextPhrase);
+        restartButton.addEventListener('click', restart);
+
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+        document.addEventListener('click', unlockAudio, { once: true });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                nextPhrase();
+            }
+        });
+
+        console.log('✓ Application initialisée - 42 répliques (20 avec audio)');
+        updateUI();
+    </script>
+</body>
+</html>
